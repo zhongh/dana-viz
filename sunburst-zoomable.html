@@ -99,7 +99,7 @@
             .attr('viewBox', `${-width / 2} ${-height / 2} ${width} ${height}`)
     .on('click', () => focusOn()); // Reset zoom on canvas click
 
-    d3.json('dana.json', (error, root) => {
+//    d3.json('dana.json', (error, root) => {
 //        if (error) throw error;     // comment out for temp solution of using dana.js
 
 //        root = d3.hierarchy(root);
@@ -159,7 +159,7 @@
                 .attr('startOffset','50%')
                 .attr('xlink:href', (_, i) => `#hiddenArc${i}` )
         .text(d => d.data.name);
-    });
+//    });
 
     function focusOn(d = { x0: 0, x1: 1, y0: 0, y1: 1 }) {
         // Reset to top-level if no data point specified
