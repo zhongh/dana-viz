@@ -31,6 +31,7 @@
     <script src='https://d3js.org/d3.v4.min.js'></script>
 </head>
 <body>
+<script src="dana.js"></script>
 <script>
     const width = window.innerWidth,
             height = window.innerHeight,
@@ -99,9 +100,10 @@
     .on('click', () => focusOn()); // Reset zoom on canvas click
 
     d3.json('dana.json', (error, root) => {
-        if (error) throw error;
+//        if (error) throw error;     // comment out for temp solution of using dana.js
 
-        root = d3.hierarchy(root);
+//        root = d3.hierarchy(root);
+        root = d3.hierarchy(dana);
         console.log(root);
         console.log(root["data"].name);
         root.sum(d => d.size);
