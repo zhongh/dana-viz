@@ -14,7 +14,7 @@
 
         .slice .main-arc {
             stroke: #fff;
-            stroke-width: 1px;
+            stroke-width: 0.4px; /* Default is 1px */
         }
 
         .slice .hidden-arc {
@@ -134,7 +134,7 @@
 //                            return color((d.children ? d : d.parent).data.name)})
                             return color(ancester(d).data.name)})
 //                            return d3.schemeCategory20[Number((d.children ? d : d.parent).data.name.substring(0, 3)) % 20]})
-//                .style("opacity", d => {return 1/d.depth})   // Added by HZ
+                .style("opacity", d => {return 1/d.depth})   // Added by HZ
                 .attr('d', arc);
 
         newSlice.append('path')
