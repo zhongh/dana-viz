@@ -27,7 +27,7 @@ import csv
 # Read data from RRUFF IMA
 
 RRUFF = []
-with open("data/RRUFF_Export_20191123_123214.csv", "r") as read_file:
+with open("data/RRUFF_All_20191128_184220.csv", "r") as read_file:
     print("Reading RRUFF ...")
     reader = csv.DictReader(read_file)
     RRUFF = [row for row in reader]
@@ -95,34 +95,47 @@ with open("data/webmineral_dana.json", "r") as read_file:
                     # print("            " + w_num + "    " + w_name)
 
                     w_temp = {}
-                    w_temp["name"] = str(w_num + "    " + w_name)
+                    w_temp["name"] = str(w_num + " " + w_name)
                     w_temp["size"] = 1
-                    w_temp["mineral-name"] = w_name
+                    w_temp["webmin-mineral-name"] = w_name
                     w_temp["dana-number"] = w_num
-                    w_temp["webmineral-ima-marking"] = w_num_marking
-                    w_temp["webmineral-chemistry"] = w["small"]
-                    w_temp["webmineral-url"] = "www.webmineral.com" + w["a"]["@href"].strip(".")
+                    w_temp["webmin-ima-marking"] = w_num_marking
+                    w_temp["webmin-chemistry"] = w["small"]
+                    w_temp["webmin-url"] = "www.webmineral.com" + w["a"]["@href"].strip(".")
 
                     # # Structure info from Webmineral.com; commented out to reduce output size
-                    # w_temp["webmineral-structure-info"] = w["span"]
+                    # w_temp["webmin-structure-info"] = w["span"]
 
                     # *** Match and add RRUFF data!
                     is_in_RRUFF = False
+                    rruff_tmp = None
                     for rruff in RRUFF:
-                        if w_temp["mineral-name"] == rruff["Mineral Name (plain)"]:
+                        if w_temp["webmin-mineral-name"] == rruff["Mineral Name (plain)"]:
                             # print(w_temp["mineral-name"] + " matched with RRUFF records")
                             is_in_RRUFF = True
+                            rruff_tmp = rruff
                             break
-                        else:
-                            if w_temp["mineral-name"] == rruff["IMA Number"]:
-                                # print(w_temp["mineral-name"] + " matched with RRUFF records by IMA number; IMA mineral name is " +
-                                #       rruff["Mineral Name (plain)"])
-                                is_in_RRUFF = True
-                                break
+                        elif w_temp["webmin-mineral-name"] == rruff["IMA Number"]:
+                            print(w_temp["webmin-mineral-name"] + " matched with RRUFF records by IMA number; IMA mineral name is " +
+                                  rruff["Mineral Name (plain)"] +
+                                  " and its webmineral marking is " + w_temp["webmin-ima-marking"])
+                            is_in_RRUFF = True
+                            rruff_tmp = rruff
+                            break
+
+                    if is_in_RRUFF:
+                        #
+                        # w_temp["rruff-mineral-name-plain"] = rruff_tmp["Mineral Name (plain)"]
+                        # w_temp["rruff-ima-number"] = rruff_tmp["IMA Number"]
+                        # w_temp["rruff-oldest-known-age"] = rruff_tmp["Oldest Known Age (Ma)"]
+                        # w_temp["rruff-crystal-system"] = rruff_tmp["Crystal Systems"]
+                        #
+                        w_temp["rruff"] = rruff_tmp
 
                     if is_in_RRUFF == False:
-                        print(w_temp["mineral-name"] + " is not found in RRUFF" +
-                              " and its webmineral marking is " + w_temp["webmineral-ima-marking"])
+                        # print(w_temp["dana-number"] + " " + w_temp["webmin-mineral-name"] + " is not found in RRUFF" +
+                        #       " and its webmineral marking is " + w_temp["webmin-ima-marking"])
+                        pass
 
 
                     # print(json.dumps(w_temp, indent=4, sort_keys=True))
@@ -244,9 +257,17 @@ for x in old_dana["children"]:
 
 # print(json.dumps(old_dana, indent=2, sort_keys=True))
 
-write_file = open("dana2.json", "w+")
+# Write to JSON file
+write_file = open("dana.json", "w+")
 write_file.write(json.dumps(old_dana, indent=2, sort_keys=True))
 write_file.close()
+
+# Write to a Javascript file starting with "var dana ="
+write_file = open("dana.js", "w+")
+write_file.write("var dana = ")
+write_file.write(json.dumps(old_dana, indent=2, sort_keys=True))
+write_file.close()
+
 
 print("    World!")
 
