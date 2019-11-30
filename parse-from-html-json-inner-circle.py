@@ -55,9 +55,13 @@ with open("data/webmineral_dana.json", "r") as read_file:
         if isinstance(x_blockquote, dict): x_blockquote = [x_blockquote]
 
         x_temp = {}
-        x_temp["name"] = x["h2"]
+        x_temp["dana-number"] = x["h2"].split(maxsplit = 1)[0]
+        x_temp["dana-name"] = x["h2"].split(maxsplit = 1)[1] if len(x["h2"].split(maxsplit = 1)) > 1 else ""
+        x_temp["name"] = " ".join(x["h2"].split())  # <-- NEW
+        # x_temp["name"] = x["h2"]
         x_temp["children"] = []
         # print(x_temp)
+        # break
 
         for y in x_blockquote:
             # print("    " + y["h3"])
@@ -65,7 +69,10 @@ with open("data/webmineral_dana.json", "r") as read_file:
             if isinstance(y_blockquote, dict): y_blockquote = [y_blockquote]
 
             y_temp = {}
-            y_temp["name"] = y["h3"]
+            y_temp["dana-number"] = y["h3"].split(maxsplit = 1)[0]
+            y_temp["dana-name"] = y["h3"].split(maxsplit = 1)[1] if len(y["h3"].split(maxsplit = 1)) > 1 else ""
+            y_temp["name"] = " ".join(y["h3"].split())  # <-- NEW
+            # y_temp["name"] = y["h3"]
             y_temp["children"] = []
             # print(y_temp)
 
@@ -77,7 +84,13 @@ with open("data/webmineral_dana.json", "r") as read_file:
                 if isinstance(z_dd, dict): z_dd = [z_dd]
 
                 z_temp = {}
-                z_temp["name"] = z["h4"]
+                z_temp["dana-number"] = z["h4"].split(maxsplit = 1)[0]
+                z_temp["dana-name"] = z["h4"].split(maxsplit = 1)[1] if len(z["h4"].split(maxsplit = 1)) > 1 else ""
+                # print(z_temp["dana-number"])
+                # print(z_temp["dana-name"])
+            # z_temp["name"] = z["h4"]  # OLD -->
+                z_temp["name"] = " ".join(z["h4"].split())  # <-- NEW
+                # print(z_temp["name"])
                 z_temp["children"] = []
                 # print(z_temp)
 
@@ -98,6 +111,7 @@ with open("data/webmineral_dana.json", "r") as read_file:
                     w_temp["name"] = str(w_num + " " + w_name)
                     w_temp["size"] = 1
                     w_temp["webmin-mineral-name"] = w_name
+                    w_temp["dana-name"] = w_name
                     w_temp["dana-number"] = w_num
                     w_temp["webmin-ima-marking"] = w_num_marking
                     w_temp["webmin-chemistry"] = w["small"]
@@ -125,12 +139,18 @@ with open("data/webmineral_dana.json", "r") as read_file:
 
                     if is_in_RRUFF:
                         #
-                        # w_temp["rruff-mineral-name-plain"] = rruff_tmp["Mineral Name (plain)"]
-                        # w_temp["rruff-ima-number"] = rruff_tmp["IMA Number"]
-                        # w_temp["rruff-oldest-known-age"] = rruff_tmp["Oldest Known Age (Ma)"]
-                        # w_temp["rruff-crystal-system"] = rruff_tmp["Crystal Systems"]
+                        w_temp["rruff-mineral-name-plain"] = rruff_tmp["Mineral Name (plain)"]
+                        w_temp["rruff-mineral-name"] = rruff_tmp["Mineral Name"]
+                        w_temp["rruff-mineral-name-html"] = rruff_tmp["Mineral Name (HTML)"]
                         #
-                        w_temp["rruff"] = rruff_tmp
+                        w_temp["rruff-chemistry-html"] = rruff_tmp["RRUFF Chemistry (HTML)"]
+                        w_temp["rruff-chemistry-plain"] = rruff_tmp["RRUFF Chemistry (plain)"]
+                        #
+                        w_temp["rruff-ima-number"] = rruff_tmp["IMA Number"]
+                        w_temp["rruff-crystal-systems"] = rruff_tmp["Crystal Systems"]
+                        w_temp["rruff-oldest-known-age"] = rruff_tmp["Oldest Known Age (Ma)"]
+                        w_temp["rruff-elements"] = rruff_tmp["Chemistry Elements"]
+
 
                     if is_in_RRUFF == False:
                         # print(w_temp["dana-number"] + " " + w_temp["webmin-mineral-name"] + " is not found in RRUFF" +
@@ -183,8 +203,16 @@ with open("old_vs_new_dana.csv", "r") as read_old_dana:
         category_now = ""
         if not is_silicates:
             if row[0].strip() != "":
+                # print(row)
                 category_now = row[0].strip().split("\u00a0")[-1]
-                old_dana["children"].append({"name": category_now, "children": []})
+                category_num = row[0].strip().split("\u00a0")[0]
+                old_dana["children"].append({
+                    "name": category_num + ". " + category_now,
+                    "children": [],
+                    "dana-number": category_num,
+                    "dana-name": category_now
+                })
+                # old_dana["children"].append({"name": category_num + " - " + category_now, "children": []})
                 # print(category_now)
 
                 if row[1].strip() != "":
@@ -192,17 +220,20 @@ with open("old_vs_new_dana.csv", "r") as read_old_dana:
                     old_dana["children"][-1]["children"].append(
                         {"name": row[1].strip().split("\u00a0")[1], "children": []}
                     )
+                    # print(old_dana["children"][-1]["children"])
                 else:   # Means it's the silicates now
                     is_silicates = True
             else:
                 old_dana["children"][-1]["children"].append(
                     {"name": row[1].strip().split("\u00a0")[1], "children": []}
                 )
+                # print(old_dana["children"][-1]["children"])
+
         else:
         # if is_silicates:
             if row[0].strip() != "":
                 category_now = row[0].strip().split("\u00a0")[-1]
-                # print(category_now)
+                print(category_now)
                 # print(json.dumps(old_dana["children"][-1], indent=2, sort_keys=True))
                 old_dana["children"][-1]["children"].append(
                     {"name": category_now, "children": []}
@@ -226,11 +257,12 @@ with open("old_vs_new_dana.csv", "r") as read_old_dana:
         # print(row[1].strip())
     # mydict = {rows[0]:rows[1] for rows in reader}
 
-# print(json.dumps(old_dana, indent=4, sort_keys=True))
+print(json.dumps(old_dana, indent=4, sort_keys=True))
 
 for x in old_dana["children"]:
-    if x["name"] != "Silicates":
-        # print(x["name"])
+    if "Silicates" not in x["name"]:
+
+        print(x["name"])
         for y in x["children"]:
             # print(y)
             for k in dana["children"]:
@@ -240,19 +272,28 @@ for x in old_dana["children"]:
                     # print(k)
                     y["name"] = k["name"]
                     y["children"] = k["children"]
+                    y["dana-number"] = y["name"].split()[0]
+                    y["dana-name"] = y["name"].split()[1]
                     break
+
     else:
+        print(x["name"])
+
         for y in x["children"]:
-            # print(y["name"])
+            print(y["name"])
             for z in y["children"]:
-                # print(z)
+                print(z)
+                # print(json.dumps(dana["children"], indent=2, sort_keys=True))
                 for k in dana["children"]:
+                    # print(k["name"])
                     # print(k["name"].replace("-", "   ").split()[0])
                     # print(y["name"].split()[0])
                     if k["name"][:3] == z["name"][:3] or k["name"].split()[0] == z["name"].split()[0]:
-                        # print(k)
+                        print("yay")
                         z["name"] = k["name"]
                         z["children"] = k["children"]
+                        z["dana-number"] = z["name"].split()[0]
+                        z["dana-name"] = z["name"].split()[1]
                         break
 
 # print(json.dumps(old_dana, indent=2, sort_keys=True))
