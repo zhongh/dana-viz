@@ -20,7 +20,6 @@
 
         .slice .hidden-arc {
             fill: none;
-            stroke: red;
         }
 
         .slice text {
@@ -60,6 +59,13 @@
             <!--/>-->
 </head>
 <body>
+<div>
+    <h1>Dana Classification of Minerals -- an Interactive Sunburst Diagram -- Heaney Viz</h1>
+    <div class="row align-items-center">
+        <div class="col-sm-2"><p id="value-range"></p></div>
+        <div class="col-sm"><div id="slider-range"></div></div>
+    </div>
+</div>
 <div id="sunburst"></div>
 <script>
     const width = window.innerWidth,
@@ -127,9 +133,6 @@
             .attr("class", "tooltip")              // apply the 'tooltip' class
             .style("opacity", 0);
 
-    // Add title
-    d3.select("body").append("div").append("h1").text("Heaney Viz - Dana Classification - Zoomable Sunburst");
-
     const svg = d3.select('div#sunburst').append('svg')
 //    const svg = d3.select('body').append('svg')
             .style('width', '100vw')
@@ -137,21 +140,39 @@
             .attr('viewBox', `${-width / 2} ${-height / 2} ${width} ${height}`)
             .on('click', () => focusOn()); // Reset zoom on canvas click
 
+    // Initialize a variable to store the full dataset --> loaded once and for all from json file (below)
+    var dataset;
+
     d3.json('dana.json', (error, root) => { // comment out THIS and NEXT line for using dana.js instead of json
         if (error) throw error;
 
+        dataset = root;
+//        dataset = d3.hierarchy(dataset);
+        drawSunburst(dataset);
+
+
+
+    });
+
+    function drawSunburst(data){        // root is already "hierarchied"
         // [HZ] Next load data
-        root = d3.hierarchy(root);    // Load from json
+        root = d3.hierarchy(data);    // Load from json
 //        root = d3.hierarchy(dana);      // Load from var dana from dana.js
 
-        console.log(root);
+//        console.log(root);
 
         root.sum(d => d.size);
 
-//        console.log(root.sum(d => d.size));
+        console.log(root);
+
+        focusOn();
+
+        // !!! Maybe this is it!!!
+        svg.selectAll('g').remove()
 
         // [HZ] Binds all descendants (data) in the hierarchy to <g> elements, all of class "slice"
         //      There will be about 7000+  of them, including the not just the leaves but also all nodes.
+        // to var???
         const slice = svg.selectAll('g.slice')
 //                .data(partition(root).descendants());     // [HZ] Displaying the root
                 .data(partition(root).descendants().filter(d => d.depth));      // [HZ] Not displaying the root (USE)
@@ -159,12 +180,11 @@
         slice.exit().remove();
 
         const newSlice = slice.enter()
-                        .append('g').attr('class', 'slice')
-                        .on('click', d => {
-                            d3.event.stopPropagation(); // revents further propagation of the current event in the capturing and bubbling phases.
-                            focusOn(d);
-                        }
-        );
+                .append('g').attr('class', 'slice')
+                .on('click', d => {
+                    d3.event.stopPropagation(); // revents further propagation of the current event in the capturing and bubbling phases.
+                    focusOn(d);
+                });      //HZ
 
         newSlice.append('title')
 //                .text(d => d.data.name + '\n' + formatNumber(d.value));       \\ Original
@@ -172,18 +192,22 @@
                     if (d.height) {
                         return d.data.name +
                                 '\n# of Descendants: ' + formatNumber(d.value) +
-                                "\nOldest Known Age: " + "(exherited from all children)";
+                                "\nOldest Known Age: " + "(exherited from all children)" +
+                                "\nHeight: " + d.height;
                     }
                     else {
                         return d.data.name +
                                 "\nOldest Known Age: " + d.data["rruff-oldest-known-age"] +
                                 "\nElements: " + d.data["rruff-elements"] +
                                 "\nChemistry: " + d.data["rruff-chemistry-plain"] +
-                                "\nCrystal Systems: " + d.data["rruff-crystal-systems"];
+                                "\nCrystal Systems: " + d.data["rruff-crystal-systems"] +
+                                "\nHeight: " + d.height;
                     }
 
                 })
         ;
+
+//        slice.selectAll('path').remove();   //HZ
 
         newSlice.append('path')
                 .attr('class', 'main-arc')
@@ -193,8 +217,8 @@
 //                            return color((d.children ? d : d.parent).data.name)})
 //                            return color(ancester(d).data.name)})
 //                            return d3.schemeCategory20[Number((d.children ? d : d.parent).data.name.substring(0, 3)) % 20]})
-                            // Newest:
-                            return color(d.children ? ancester(d).data.name : d.data["rruff-crystal-systems"])})
+                    // Newest:
+                    return color(d.children ? ancester(d).data.name.split(".")[0] : d.data["rruff-crystal-systems"])})
                 .style("opacity", d => {return (d.height ? 1/d.depth : 0.6)})   // Added by HZ
 //                .style("stroke", d => {return 1/d.size})   // Added by HZ
                 .style("stroke", d => {
@@ -217,10 +241,10 @@
                 .attr('startOffset','50%')
                 .attr('xlink:href', (_, i) => `#hiddenArc${i}` )
                 .text(d => d.data.name)
-                    .style('fill', 'none')
-                    .style('stroke', '#fff')
-                    .style('stroke-width', 5)
-                    .style('stroke-linejoin', 'round');
+                .style('fill', 'none')
+                .style('stroke', '#fff')
+                .style('stroke-width', 5)
+                .style('stroke-linejoin', 'round');
 
         // On top of the white contour, add text
         text.append('textPath')
@@ -252,8 +276,7 @@
 ////                            .style("top", (d3.event.pageY - 28) + "px");
 //                })
                 .text(d => d.data.name);
-    });
-
+    }
 
     function focusOn(d = { x0: 0, x1: 1, y0: 0, y1: 1 }) {
         // Reset to top-level if no data point specified
@@ -286,12 +309,116 @@
                     if (d.parent) { moveStackToFront(d.parent); }})
         }
     }
-</script>
 
-<div class="row align-items-center">
-    <div class="col-sm-2"><p id="value-range"></p></div>
-    <div class="col-sm"><div id="slider-range"></div></div>
-</div>
+    function update(h){
+        console.log(h);
+        var updatedDataset = filterByAge(data = dataset, h[0], h[1]);
+        console.log(updatedDataset);
+        console.log(typeof(updatedDataset));
+//        drawSunburst(d3.hierarchy(updatedDataset));
+        drawSunburst(updatedDataset);
+        console.log("New sunburst generated!");
+    }
+
+    function filterByAge(data = {}, minAge = 0, maxAge = 7000){
+        for (a = data.children.length - 1; a >= 0; a--){
+
+            console.log(data.children[a].name);
+
+            for (b = data.children[a].children.length - 1; b >= 0; b--){
+
+//                console.log(data.children[a].children[b].name)
+
+                for (c = data.children[a].children[b].children.length - 1; c >= 0; c--){
+
+//                    console.log(data.children[a].children[b].children[c].name);
+
+                    for (d = data.children[a].children[b].children[c].children.length - 1; d >= 0; d--){
+
+//                        console.log(data.children[a].children[b].children[c].children[d].name);
+
+                        if (data.children[a].name.includes("Silicate")){
+
+//                            console.log(data.children[a].name + " -- Need to go down one more level");
+
+                            for (e = data.children[a].children[b].children[c].children[d].children.length - 1; e >= 0; e--){
+
+//                                console.log(data.children[a].children[b].children[c].children[d].children[e].name);
+
+                                for (f = data.children[a].children[b].children[c].children[d].children[e].children.length - 1; f >= 0; f--){
+
+                                    if (!data.children[a].children[b].children[c].children[d].children[e].children[f]["rruff-oldest-known-age"] ||
+                                            (Number(data.children[a].children[b].children[c].children[d].children[e].children[f]["rruff-oldest-known-age"]) > maxAge ||
+                                            Number(data.children[a].children[b].children[c].children[d].children[e].children[f]["rruff-oldest-known-age"]) < minAge)){
+
+                                        data.children[a].children[b].children[c].children[d].children[e].children.splice(f, 1);
+                                    }
+
+                                }
+
+                                if (data.children[a].children[b].children[c].children[d].children[e].children.length < 1){
+                                    data.children[a].children[b].children[c].children[d].children.splice(e, 1)
+                                }
+
+                            }
+
+                        }
+                        else {
+
+//                            console.log(data.children[a].name + " -- Start looking at the children");
+
+                            for (e = data.children[a].children[b].children[c].children[d].children.length - 1; e >= 0; e--) {
+
+//                                console.log(data.children[a].children[b].children[c].children[d].children[e]);
+
+                                if (!data.children[a].children[b].children[c].children[d].children[e]["rruff-oldest-known-age"] ||
+                                        (Number(data.children[a].children[b].children[c].children[d].children[e]["rruff-oldest-known-age"]) > maxAge ||
+                                        Number(data.children[a].children[b].children[c].children[d].children[e]["rruff-oldest-known-age"]) < minAge)){
+
+//                                    console.log((data.children[a].children[b].children[c].children[d].children[e].name));
+//                                    console.log((data.children[a].children[b].children[c].children[d].children[e]["rruff-oldest-known-age"]));
+                                    data.children[a].children[b].children[c].children[d].children.splice(e, 1);
+                                }
+
+                            }
+                        }
+
+                        if (data.children[a].children[b].children[c].children[d].children.length < 1){
+//                                console.log(data.children[a].children[b].children[c].children[d]);
+//                                console.log(" has no children!!!");
+                            data.children[a].children[b].children[c].children.splice(d, 1);
+                        }
+
+                    }
+
+                    if (data.children[a].children[b].children[c].children.length < 1){
+                        data.children[a].children[b].children.splice(c, 1);
+                    }
+                }
+
+                if (data.children[a].children[b].children.length < 1){
+                    data.children[a].children.splice(b, 1);
+                }
+            }
+            if (data.children[a].children.length < 1){
+                data.children.splice(a, 1);
+            }
+        }
+        console.log(data);
+        return data;
+    }
+
+//    function filterByAgeRecursion(data = {}, minAge = 0, maxAge = 7000){
+//        if (!data.children){
+//            return null;
+//        }
+//        else {
+//
+//        }
+//        console.log(data);
+//        return data;
+//    }
+</script>
 
 <script>
 
@@ -299,27 +426,29 @@
 //    const width = window.innerWidth;
 
     // Range
-    var data = [0, 500, 1000, 1500, 2000, 2500];
+    var data = [0, 500, 1000, 1500, 2000, 2500, 4000, 5000];
 
     var sliderRange = d3
             .sliderBottom()
             .min(d3.min(data))
             .max(d3.max(data))
-            .width(600)
+            .width(width/2)
 //            .tickFormat(d3.format('.2%'))
             .tickFormat(d3.format(''))
             .ticks(5)
-            .default([300, 700])
+            .default([d3.min(data), d3.max(data)])
             .fill('#2196f3')
-            .on('onchange', val => { console.log(val);
-//        d3.select('p#value-range').text(val.map(d3.format('.2%')).join('-'));
-        d3.select('p#value-range').text(val.map(d3.format('.2f')).join('-') + " Ma");
+            .on('onchange', val => {
+//                console.log(val);
+        //        d3.select('p#value-range').text(val.map(d3.format('.2%')).join('-'));
+                d3.select('#value-range').text(val.map(d3.format('.2f')).join('-') + " Ma");
+                update(val);
     });
 
     var gRange = d3
             .select('div#slider-range')
             .append('svg')
-            .attr('width', 1000)   // 500 --> width
+            .attr('width', 2000)   // 500 --> width
             .attr('height', 100)
             .append('g')
             .attr('transform', 'translate(30,30)');
