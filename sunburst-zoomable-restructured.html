@@ -20,6 +20,7 @@
 
         .slice .hidden-arc {
             fill: none;
+            stroke: red;
         }
 
         .slice text {
@@ -43,6 +44,8 @@
         }
     </style>
 
+    <script src="dana.js"></script>
+
     <script src='https://d3js.org/d3.v4.min.js'></script>
 
     <!--Range slider implemented by: d3-simple-slider-->
@@ -57,7 +60,6 @@
             <!--/>-->
 </head>
 <body>
-<!--<script src="dana.js"></script>-->
 <div id="sunburst"></div>
 <script>
     const width = window.innerWidth,
@@ -86,6 +88,7 @@
 
     const partition = d3.partition();
 
+    // [HZ] This is how to transform the x0, x1, y0, and y1 into d3 arc parameters
     const arc = d3.arc()
                     .startAngle(d => x(d.x0))
                     .endAngle(d => x(d.x1))
@@ -116,6 +119,7 @@
         return d.data.name.length * CHAR_SPACE < perimeter;
     };
 
+    // [HZ] Tooltop
     // http://bl.ocks.org/d3noob/c37cb8e630aaef7df30d
     // Define 'div' for tooltips
     var div = d3.select("body")
@@ -133,25 +137,31 @@
             .attr('viewBox', `${-width / 2} ${-height / 2} ${width} ${height}`)
             .on('click', () => focusOn()); // Reset zoom on canvas click
 
-    d3.json('dana.json', (error, root) => {
-        if (error) throw error;     // comment out for temp solution of using dana.js
-        console.log(root);
+    d3.json('dana.json', (error, root) => { // comment out THIS and NEXT line for using dana.js instead of json
+        if (error) throw error;
+
+        // [HZ] Next load data
         root = d3.hierarchy(root);    // Load from json
-//        root = d3.hierarchy(dana);      // Load from var dana
+//        root = d3.hierarchy(dana);      // Load from var dana from dana.js
+
         console.log(root);
 
         root.sum(d => d.size);
 
+//        console.log(root.sum(d => d.size));
+
+        // [HZ] Binds all descendants (data) in the hierarchy to <g> elements, all of class "slice"
+        //      There will be about 7000+  of them, including the not just the leaves but also all nodes.
         const slice = svg.selectAll('g.slice')
-//                .data(partition(root).descendants());
-                .data(partition(root).descendants().filter(d => d.depth));      // Not displaying the root
+//                .data(partition(root).descendants());     // [HZ] Displaying the root
+                .data(partition(root).descendants().filter(d => d.depth));      // [HZ] Not displaying the root (USE)
 
         slice.exit().remove();
 
         const newSlice = slice.enter()
                         .append('g').attr('class', 'slice')
                         .on('click', d => {
-                            d3.event.stopPropagation();
+                            d3.event.stopPropagation(); // revents further propagation of the current event in the capturing and bubbling phases.
                             focusOn(d);
                         }
         );
@@ -179,13 +189,12 @@
                 .attr('class', 'main-arc')
 //                .style('fill', d => color((d.children ? d : d.parent).data.name))     // Existing coloring code
                 .style('fill',
-                        d => {//console.log(d.data);
-//                                return "red"})
+                        d => {
 //                            return color((d.children ? d : d.parent).data.name)})
 //                            return color(ancester(d).data.name)})
+//                            return d3.schemeCategory20[Number((d.children ? d : d.parent).data.name.substring(0, 3)) % 20]})
                             // Newest:
                             return color(d.children ? ancester(d).data.name : d.data["rruff-crystal-systems"])})
-//                            return d3.schemeCategory20[Number((d.children ? d : d.parent).data.name.substring(0, 3)) % 20]})
                 .style("opacity", d => {return (d.height ? 1/d.depth : 0.6)})   // Added by HZ
 //                .style("stroke", d => {return 1/d.size})   // Added by HZ
                 .style("stroke", d => {
@@ -196,7 +205,7 @@
         newSlice.append('path')
                 .attr('class', 'hidden-arc')
                 .attr('id', (_, i) => `hiddenArc${i}`)
-        .attr('d', middleArcLine);
+                .attr('d', middleArcLine);      // The shape of an SVG Path element is defined by one attribute: d
 
         const text = newSlice.append('text')
                 .attr('display', d => textFits(d) ? null : 'none');//.style('fill', 'green');
@@ -213,6 +222,7 @@
                     .style('stroke-width', 5)
                     .style('stroke-linejoin', 'round');
 
+        // On top of the white contour, add text
         text.append('textPath')
                 .attr('startOffset','50%')
                 .attr('xlink:href', (_, i) => `#hiddenArc${i}` )
@@ -251,35 +261,32 @@
         const transition = svg.transition()
                 .duration(750)
                 .tween('scale', () => {
-            const xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
-            yd = d3.interpolate(y.domain(), [d.y0, 1]);
-        return t => { x.domain(xd(t)); y.domain(yd(t)); };
-    });
+                    const xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
+                          yd = d3.interpolate(y.domain(), [d.y0, 1]);
+                    return t => { x.domain(xd(t)); y.domain(yd(t)); };
+                });
 
-    transition.selectAll('path.main-arc')
-            .attrTween('d', d => () => arc(d));
+        transition.selectAll('path.main-arc')
+                .attrTween('d', d => () => arc(d));
 
-    transition.selectAll('path.hidden-arc')
-            .attrTween('d', d => () => middleArcLine(d));
+        transition.selectAll('path.hidden-arc')
+                .attrTween('d', d => () => middleArcLine(d));
 
-    transition.selectAll('text')
-            .attrTween('display', d => () => textFits(d) ? null : 'none');
+        transition.selectAll('text')
+                .attrTween('display', d => () => textFits(d) ? null : 'none');
 
-    moveStackToFront(d);
+        moveStackToFront(d);
 
-    //
+        //
 
-    function moveStackToFront(elD) {
-        svg.selectAll('.slice').filter(d => d === elD)
-        .each(function(d) {
-                this.parentNode.appendChild(this);
-                if (d.parent) { moveStackToFront(d.parent); }
-            })
+        function moveStackToFront(elD) {
+            svg.selectAll('.slice').filter(d => d === elD)
+            .each(function(d) {
+                    this.parentNode.appendChild(this);
+                    if (d.parent) { moveStackToFront(d.parent); }})
         }
     }
 </script>
-
-
 
 <div class="row align-items-center">
     <div class="col-sm-2"><p id="value-range"></p></div>
