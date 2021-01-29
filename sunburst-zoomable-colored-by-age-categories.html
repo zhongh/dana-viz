@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
 <head>
+    <meta charset="UTF-8"/>
     <title>Heaney Viz - Dana Classification - Zoomable Sunburst</title>
     <style>
         body {
@@ -43,13 +44,16 @@
         }
     </style>
 
-    <script src="dana.js"></script>
+    <!--    <script src='https://d3js.org/d3.v4.min.js'></script>-->
+    <script src='js/d3.v4.min.js'></script>
 
-    <script src='https://d3js.org/d3.v4.min.js'></script>
 
     <!--Range slider implemented by: d3-simple-slider-->
     <!--https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518-->
-    <script src="https://unpkg.com/d3-simple-slider"></script>
+    <!--    <script src="https://unpkg.com/d3-simple-slider"></script>-->
+    <script src="js/d3-simple-slider.min.js"></script>
+
+<!--    <script src="dana.js"></script>-->
 
     <!--<link-->
         <!--rel="stylesheet"-->
@@ -59,6 +63,8 @@
             <!--/>-->
 </head>
 <body>
+<header>[Header] Visualizing Dana Classification of Minerals</header>
+<nav>[Nav Bar] Sunburst Diagram | Icicles | Radial Tree | Data Analysis | About</nav>
 <div>
     <h1>Dana Classification of Minerals -- an Interactive Sunburst Diagram -- Heaney Viz</h1>
     <div class="row align-items-center">
